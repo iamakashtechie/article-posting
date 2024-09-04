@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Sharing Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            height: 150px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.delete {
+            background-color: #f44336;
+        }
+        button.delete:hover {
+            background-color: #d32f2f;
+        }
+        #articleList {
+            margin-top: 20px;
+        }
+        .article {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .article h3 {
+            margin-top: 0;
+        }
+        .article p {
+            margin-bottom: 5px;
+        }
+        .edit-form {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Article Sharing Web App</h1>
+        
+        <h2>Create New Article</h2>
+        <textarea id="newArticle" placeholder="Write your article here..."></textarea>
+        <input type="text" id="newAuthor" placeholder="Your username">
+        <button onclick="saveArticle()">Save Article</button>
+        
+        <h2>Articles</h2>
+        <div id="articleList"></div>
+    </div>
+    
+
+    <script>
+        // Load articles from local storage
+        let articles = JSON.parse(localStorage.getItem('articles')) || [];
+
+        // Function to save a new article
+        function saveArticle() {
+            const content = document.getElementById('newArticle').value;
+            const author = document.getElementById('newAuthor').value;
+            if (content && author) {
+                const article = {
+                    id: Date.now(),
+                    content: content,
+                    author: author,
+                    edits: []
+                };
+                articles.push(article);
+                localStorage.setItem('articles', JSON.stringify(articles));
+                document.getElementById('newArticle').value = '';
+                document.getElementById('newAuthor').value = '';
+                displayArticles();
+            } else {
+                alert('Please enter both the article content and your username.');
+            }
+        }
+
+        // Function to display all articles
+        function displayArticles() {
+            const articleList = document.getElementById('articleList');
+            articleList.innerHTML = '';
+            articles.forEach(article => {
+                const articleElement = document.createElement('div');
+                articleElement.className = 'article';
+                articleElement.innerHTML = `
+                    <h3>Article by ${article.author}</h3>
+                    <p>${article.content}</p>
+                    <button onclick="showEditForm(${article.id})">Edit</button>
+                    <button class="delete" onclick="deleteArticle(${article.id})">Delete</button>
+                    ${article.edits.map(edit => `
+                        <div>
+                            <h4>Edit by ${edit.author}</h4>
+                            <p>${edit.content}</p>
+                        </div>
+                    `).join('')}
+                    <div id="editForm${article.id}" class="edit-form" style="display: none;">
+                        <textarea id="editContent${article.id}">${article.content}</textarea>
+                        <input type="text" id="editAuthor${article.id}" placeholder="Your username">
+                        <button onclick="saveEdit(${article.id})">Save Edit</button>
+                    </div>
+                `;
+                articleList.appendChild(articleElement);
+            });
+        }
+
+        // Function to show edit form
+        function showEditForm(id) {
+            document.getElementById(`editForm${id}`).style.display = 'block';
+        }
+
+        // Function to save an edit
+        function saveEdit(id) {
+            const editContent = document.getElementById(`editContent${id}`).value;
+            const editAuthor = document.getElementById(`editAuthor${id}`).value;
+            if (editContent && editAuthor) {
+                const article = articles.find(a => a.id === id);
+                article.edits.push({
+                    content: editContent,
+                    author: editAuthor
+                });
+                localStorage.setItem('articles', JSON.stringify(articles));
+                displayArticles();
+            } else {
+                alert('Please enter both the edited content and your username.');
+            }
+        }
+
+        // Function to delete an article
+        function deleteArticle(id) {
+            const adminCode = prompt("Enter admin code to delete:");
+            if (adminCode === "nopermission") {
+                articles = articles.filter(article => article.id !== id);
+                localStorage.setItem('articles', JSON.stringify(articles));
+                displayArticles();
+                alert("Article deleted successfully.");
+            } else {
+                alert("Incorrect admin code. Deletion cancelled.");
+            }
+        }
+
+        // Initial display of articles
+        displayArticles();
+    </script>
+</body>
+</html>
